@@ -56,7 +56,7 @@ public class JwtFilter extends OncePerRequestFilter {
                         List<Integer> companyIdsInt = claims.get("companyIds", List.class);
                         List<Long> companyIds = new ArrayList<>();
                         if (companyIdsInt != null) {
-                            for (Integer i : companyIdsInt) companyIds.add(i.longValue());
+                            for (Integer i : companyIdsInt) companyIds.add(Long.valueOf(i));
                         } else {
                             // fallback: from DB
                             for (UserCompany uc : user.getCompanies()) {

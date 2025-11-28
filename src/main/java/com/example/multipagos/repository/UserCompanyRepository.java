@@ -5,5 +5,8 @@ import com.example.multipagos.model.UserCompany;
 import java.util.List;
 
 public interface UserCompanyRepository extends JpaRepository<UserCompany, Long> {
+
     List<UserCompany> findByUserId(Long userId);
+
+    boolean existsByUserIdAndCompanyId(Long userId, Long companyId);
 }

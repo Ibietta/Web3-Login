@@ -19,6 +19,18 @@ public class CompanyService {
         return companyRepo.save(c);
     }
 
+    public Company findSafe(Long id, Long companyActive) {
+
+        Company c = companyRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Empresa no encontrada"));
+
+        if (!c.getId().equals(companyActive)) {
+            throw new RuntimeException("Acceso no autorizado a empresa.");
+        }
+
+        return c;
+    }
+
     public Company findById(Long id) {
         return companyRepo.findById(id).orElse(null);
     }

@@ -66,23 +66,48 @@ public class AuthService {
     }
 
     public AuthResponse login(LoginDto dto) {
-        User u = userRepo.findByUsername(dto.username).orElseThrow(() -> new RuntimeException("user_not_found"));
+
+        User u = userRepo.findByUsername(dto.username)
+                .orElseThrow(() -> new RuntimeException("user_not_found"));
+
         if (!passwordEncoder.matches(dto.password, u.getPasswordHash())) {
             throw new RuntimeException("invalid_credentials");
         }
-        List<UserCompany> ucs = ucRepo.findByUserId(u.getId());
-        List<Long> companyIds = ucs.stream().map(uc -> uc.getCompany().getId()).collect(Collectors.toList());
-        List<String> roles = ucs.stream().map(uc -> uc.getRole().name()).distinct().collect(Collectors.toList());
 
-        // If user passed a companyId to select, place it first (optional)
+        List<UserCompany> ucs = ucRepo.findByUserId(u.getId());
+
+        List<Long> companyIds = ucs.stream()
+                .map(uc -> uc.getCompany().getId())
+                .collect(Collectors.toList());
+
+        List<String> roles = ucs.stream()
+                .map(uc -> uc.getRole().name())
+                .distinct()
+                .collect(Collectors.toList());
+
+        // Si envió companyId, reordenar
         if (dto.companyId != null && companyIds.contains(dto.companyId)) {
             List<Long> reordered = new ArrayList<>();
             reordered.add(dto.companyId);
-            for (Long c : companyIds) if (!c.equals(dto.companyId)) reordered.add(c);
+            for (Long c : companyIds)
+                if (!c.equals(dto.companyId)) reordered.add(c);
             companyIds = reordered;
         }
 
+        // Crear token
         String token = jwtUtil.generateToken(u.getUsername(), companyIds, roles);
-        return new AuthResponse(token, u.getUsername(), companyIds);
+
+        // Empresa activa es la primera
+        Long companyActive = companyIds.get(0);
+
+        // Rol activo según empresa activa
+        String roleActive = ucs.stream()
+                .filter(uc -> uc.getCompany().getId().equals(companyActive))
+                .findFirst()
+                .get()
+                .getRole()
+                .name();
+
+        return new AuthResponse(token, u.getUsername(), companyActive, roleActive);
     }
 }
